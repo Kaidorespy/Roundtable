@@ -1,0 +1,112 @@
+name: Build Releases
+
+on:
+  push:
+    tags:
+      - 'v*'  # Triggers on version tags like v1.0, v1.0.1, etc.
+  workflow_dispatch:  # Allows manual trigger from GitHub UI
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller
+          pip install anthropic openai httpx pydantic pydantic-settings flask flask-cors pillow requests websocket-client python-dotenv
+
+      - name: Build executable
+        run: pyinstaller roundtable.spec --clean
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Roundtable-Windows
+          path: dist/Roundtable.exe
+
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller
+          pip install anthropic openai httpx pydantic pydantic-settings flask flask-cors pillow requests websocket-client python-dotenv
+
+      - name: Build executable
+        run: pyinstaller roundtable.spec --clean
+
+      - name: Upload Linux artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Roundtable-Linux
+          path: dist/Roundtable
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller
+          pip install anthropic openai httpx pydantic pydantic-settings flask flask-cors pillow requests websocket-client python-dotenv
+
+      - name: Build executable
+        run: pyinstaller roundtable.spec --clean
+
+      - name: Upload macOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Roundtable-macOS
+          path: dist/Roundtable
+
+  create-release:
+    needs: [build-windows, build-linux, build-macos]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    permissions:
+      contents: write
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Prepare release files
+        run: |
+          mkdir release
+          cp artifacts/Roundtable-Windows/Roundtable.exe release/Roundtable-Windows.exe
+          cp artifacts/Roundtable-Linux/Roundtable release/Roundtable-Linux
+          cp artifacts/Roundtable-macOS/Roundtable release/Roundtable-macOS
+          chmod +x release/Roundtable-Linux release/Roundtable-macOS
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            release/Roundtable-Windows.exe
+            release/Roundtable-Linux
+            release/Roundtable-macOS
+          generate_release_notes: true

@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Parameter Sweep</title>
+    <style>
+        body {
+            background: #1a1a1a;
+            color: #eee;
+            font-family: monospace;
+            padding: 20px;
+        }
+        h1 { color: #fff; }
+        .info {
+            background: #2a2a2a;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .grid-container {
+            margin-top: 20px;
+        }
+        .sampler-section {
+            margin-bottom: 40px;
+        }
+        table {
+            border-collapse: collapse;
+        }
+        th {
+            background: #333;
+            padding: 10px;
+            text-align: center;
+        }
+        td {
+            padding: 5px;
+            text-align: center;
+            vertical-align: top;
+        }
+        td img {
+            max-width: 250px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        td img:hover {
+            outline: 2px solid #4a9eff;
+        }
+        .label {
+            font-size: 11px;
+            color: #888;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Parameter Sweep</h1>
+    <div class="info">
+        <div><strong>Prompt:</strong> a dragon in a cave</div>
+        <div><strong>Seed:</strong> 270398678</div>
+        <div><strong>Steps:</strong> [15, 20, 25, 30]</div>
+        <div><strong>CFG:</strong> [5.0, 7.0, 7.5, 9.0]</div>
+        <div><strong>Samplers:</strong> ['euler']</div>
+    </div>
+
+    <div class="grid-container">
+
+        <div class="sampler-section">
+            <h2>Sampler: euler</h2>
+            <table>
+                <tr>
+                    <th>Steps \ CFG</th>
+                    <th>CFG 5.0</th>
+                    <th>CFG 7.0</th>
+                    <th>CFG 7.5</th>
+                    <th>CFG 9.0</th>
+                </tr>
+                <tr>
+                    <th>15 steps</th>
+                    <td>
+                        <img src="s15_cfg5.0_euler.png" onclick="window.open('s15_cfg5.0_euler.png')">
+                        <div class="label">s15 cfg5.0</div>
+                    </td>
+                    <td>
+                        <img src="s15_cfg7.0_euler.png" onclick="window.open('s15_cfg7.0_euler.png')">
+                        <div class="label">s15 cfg7.0</div>
+                    </td>
+                    <td>
+                        <img src="s15_cfg7.5_euler.png" onclick="window.open('s15_cfg7.5_euler.png')">
+                        <div class="label">s15 cfg7.5</div>
+                    </td>
+                    <td>
+                        <img src="s15_cfg9.0_euler.png" onclick="window.open('s15_cfg9.0_euler.png')">
+                        <div class="label">s15 cfg9.0</div>
+                    </td>
+                </tr>
+                <tr>
+                    <th>20 steps</th>
+                    <td>
+                        <img src="s20_cfg5.0_euler.png" onclick="window.open('s20_cfg5.0_euler.png')">
+                        <div class="label">s20 cfg5.0</div>
+                    </td>
+                    <td>
+                        <img src="s20_cfg7.0_euler.png" onclick="window.open('s20_cfg7.0_euler.png')">
+                        <div class="label">s20 cfg7.0</div>
+                    </td>
+                    <td>
+                        <img src="s20_cfg7.5_euler.png" onclick="window.open('s20_cfg7.5_euler.png')">
+                        <div class="label">s20 cfg7.5</div>
+                    </td>
+                    <td>
+                        <img src="s20_cfg9.0_euler.png" onclick="window.open('s20_cfg9.0_euler.png')">
+                        <div class="label">s20 cfg9.0</div>
+                    </td>
+                </tr>
+                <tr>
+                    <th>25 steps</th>
+                    <td>
+                        <img src="s25_cfg5.0_euler.png" onclick="window.open('s25_cfg5.0_euler.png')">
+                        <div class="label">s25 cfg5.0</div>
+                    </td>
+                    <td>
+                        <img src="s25_cfg7.0_euler.png" onclick="window.open('s25_cfg7.0_euler.png')">
+                        <div class="label">s25 cfg7.0</div>
+                    </td>
+                    <td>
+                        <img src="s25_cfg7.5_euler.png" onclick="window.open('s25_cfg7.5_euler.png')">
+                        <div class="label">s25 cfg7.5</div>
+                    </td>
+                    <td>
+                        <img src="s25_cfg9.0_euler.png" onclick="window.open('s25_cfg9.0_euler.png')">
+                        <div class="label">s25 cfg9.0</div>
+                    </td>
+                </tr>
+                <tr>
+                    <th>30 steps</th>
+                    <td>
+                        <img src="s30_cfg5.0_euler.png" onclick="window.open('s30_cfg5.0_euler.png')">
+                        <div class="label">s30 cfg5.0</div>
+                    </td>
+                    <td>
+                        <img src="s30_cfg7.0_euler.png" onclick="window.open('s30_cfg7.0_euler.png')">
+                        <div class="label">s30 cfg7.0</div>
+                    </td>
+                    <td>
+                        <img src="s30_cfg7.5_euler.png" onclick="window.open('s30_cfg7.5_euler.png')">
+                        <div class="label">s30 cfg7.5</div>
+                    </td>
+                    <td>
+                        <img src="s30_cfg9.0_euler.png" onclick="window.open('s30_cfg9.0_euler.png')">
+                        <div class="label">s30 cfg9.0</div>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+    </div>
+</body>
+</html>

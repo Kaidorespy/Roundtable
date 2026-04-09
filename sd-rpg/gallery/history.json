@@ -1,0 +1,14 @@
+[
+  {
+    "prompt": "a dragon in a cave",
+    "negative": "blurry, low quality, text, watermark",
+    "template_name": null,
+    "image_path": "C:\\Users\\Casey\\Projects\\sd-rpg\\gallery\\gen_2046564325_20260325_014627.png",
+    "seed": 2046564325,
+    "timestamp": "2026-03-25T01:46:27.418620",
+    "width": 1024,
+    "height": 1024,
+    "steps": 20,
+    "cfg": 7.0
+  }
+]

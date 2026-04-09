@@ -1,0 +1,11 @@
+{
+  "name": "scifi",
+  "system_prompt": "science fiction art, futuristic, detailed illustration, cinematic lighting",
+  "negative": "blurry, low quality, text, watermark, fantasy elements, medieval",
+  "width": 1024,
+  "height": 1024,
+  "steps": 25,
+  "cfg": 7.5,
+  "checkpoint": null,
+  "created": "2026-03-25T01:45:20.763187"
+}

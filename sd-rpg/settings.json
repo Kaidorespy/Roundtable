@@ -1,0 +1,23 @@
+{
+  "use_ollama_review": false,
+  "ollama_model": "llava",
+  "ollama_auto_reject_below": 5.0,
+  "batch_count": 1,
+  "pick_random": false,
+  "auto_open_image": true,
+  "auto_open_gallery": false,
+  "comfy_host": "127.0.0.1",
+  "comfy_port": 8188,
+  "default_template": null,
+  "default_checkpoint": "realismIllustriousBy_v50FP16.safetensors",
+  "default_steps": 28,
+  "default_cfg": 5.0,
+  "default_width": 896,
+  "default_height": 1152,
+  "default_negative": "lowres, bad anatomy, bad hands, extra digits, multiple views, text, error, worst quality, jpeg artifacts, low quality, watermark, unfinished, displeasing, signature, username, scan, blurry",
+  "save_all_images": true,
+  "confirm_before_generate": false,
+  "show_seed_in_filename": true,
+  "enable_queue_ahead": false,
+  "queue_ahead_count": 3
+}
