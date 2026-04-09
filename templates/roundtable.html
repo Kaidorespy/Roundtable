@@ -6109,26 +6109,32 @@
                 try {
                     const data = JSON.parse(reader.result);
 
-                    // Handle experiment_chat format: { history: [{role, content}, ...] }
+                    // Handle multiple formats:
+                    // 1. Roundtable export: { messages: [{speaker_name, content, ...}] }
+                    // 2. experiment_chat format: { history: [{role, content}, ...] }
+                    const messages = data.messages || [];
                     const history = data.history || [];
-                    if (history.length === 0) {
+                    const count = messages.length || history.length;
+
+                    if (count === 0) {
                         showSystemMessage('No messages found in file', 'error');
                         return;
                     }
 
                     // Confirm import
-                    if (!confirm(`Import ${history.length} messages into ${partner?.name}'s room?\n\nThis will add to the existing conversation.`)) {
+                    if (!confirm(`Import ${count} messages into ${partner?.name}'s room?\n\nThis will add to the existing conversation.`)) {
                         return;
                     }
 
-                    showSystemMessage(`Importing ${history.length} messages...`);
+                    showSystemMessage(`Importing ${count} messages...`);
 
-                    // Send to backend
+                    // Send to backend - it handles both formats
                     const res = await fetch(`/rooms/${currentRoomId}/import`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                            history: history,
+                            messages: messages.length > 0 ? messages : undefined,
+                            history: history.length > 0 ? history : undefined,
                             partner_id: currentPrivatePartnerId,
                         })
                     });
