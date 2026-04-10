@@ -40,7 +40,7 @@ Requires ComfyUI backend.
 - Background job queue (non-blocking)
 
 ### Voice
-- **TTS**: OpenAI voices, ElevenLabs, or Piper (free, local)
+- **TTS**: OpenAI voices or ElevenLabs
 - **STT**: OpenAI Whisper for voice input
 - Per-character voice assignment
 
@@ -58,12 +58,6 @@ python main.py
 ```
 
 Open http://localhost:5000
-
-### Optional: Piper TTS (free local voice)
-```bash
-pip install piper-tts
-```
-Models download automatically on first use.
 
 ### Optional: ComfyUI (image generation)
 See ComfyUI documentation. Set URL in settings.

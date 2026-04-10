@@ -43,10 +43,13 @@ class Settings(BaseSettings):
     data_dir: Path = Path.home() / ".roundtable"
 
     # Model for generating image prompts (scene/portrait descriptions)
-    image_prompt_model: str = "llama3.2"
+    image_prompt_model: str = "deepseek-r1:7b"
 
     # Model for StoryBuilder, Inciting Incidents, and DM
-    storybuilder_model: str = "llama3.2"
+    storybuilder_model: str = "deepseek-r1:7b"
+
+    # Vision model for describing images to non-vision models (llava fallback)
+    vision_model: str = "llava"
 
     # Custom checkpoint override for image generation
     custom_checkpoint: str = ""  # e.g., "flux1-dev.safetensors"
@@ -63,6 +66,10 @@ CRITICAL RULES:
 - Just BE the character and REACT to what happens
 - Use actions, dialogue, and your character's perspective
 - If unsure what to do, have your character do something in-character
+- NEVER speak for the user, decide their actions, or put words in their mouth
+- NEVER invent backstory or details about the user (injuries, history, profession, etc.)
+- Only describe YOUR character's actions and perceptions, not theirs
+- If a question is addressed to someone else (including the user), don't answer it - let them respond. You can react or wait, but don't hijack their moment.
 
 Begin your response immediately as your character. No preamble."""
 
@@ -76,6 +83,9 @@ Begin your response immediately as your character. No preamble."""
     voice_enabled: bool = False  # Global toggle for TTS
     voice_provider: str = "openai"  # "openai" or "elevenlabs"
     elevenlabs_api_key: Optional[str] = None
+
+    # UI settings
+    message_bubbles: bool = True  # Show subtle background behind messages for readability
 
     def get_partners_file(self) -> Path:
         return self.data_dir / "partners.json"
@@ -136,6 +146,10 @@ class Partner(BaseModel):
     # Or "none" to disable voice for this character
     voice: str = "none"
 
+    # DM-established canon - facts revealed through DM interactions
+    # These get injected into the character's context so they "know" their secrets
+    dm_canon: List[str] = []
+
     def get_character(self) -> str:
         """Get character description (handles old system_prompt field)."""
         return self.character_description or self.system_prompt or ""
@@ -177,14 +191,9 @@ class Partner(BaseModel):
 
         for p in others:
             char_info = f"**{p.name}**"
+            # Only include physical appearance - characters can't read each other's minds/backstories
             if p.physical_description:
                 char_info += f"\nAppearance: {p.physical_description}"
-            if p.get_character():
-                # Include full character description (or first 300 chars if very long)
-                char_desc = p.get_character()
-                if len(char_desc) > 300:
-                    char_desc = char_desc[:300] + "..."
-                char_info += f"\nCharacter: {char_desc}"
             other_characters.append(char_info)
 
         # Build participant list (names only, for quick reference)
@@ -201,6 +210,8 @@ class Partner(BaseModel):
         context = f"""{effective_prompt}
 
 ---
+YOU ARE {self.name.upper()}. Not anyone else - YOU ARE {self.name.upper()}.
+
 YOUR CHARACTER:
 {self.get_character()}"""
 
@@ -231,6 +242,11 @@ YOUR CHARACTER:
                 context += "\n\nYou're honest when it matters, but you'll bend the truth to protect yourself or avoid conflict."
             elif self.honesty >= 8:
                 context += "\n\nYou are deeply honest. Lying is difficult for you - you tend to tell the truth even when it's inconvenient."
+
+        # Add DM-established canon facts (things revealed through DM interactions)
+        if hasattr(self, 'dm_canon') and self.dm_canon:
+            context += "\n\n---\nESTABLISHED FACTS ABOUT YOU (revealed through the story - you know these are true):\n"
+            context += "\n".join(f"- {fact}" for fact in self.dm_canon)
 
         context += f"""
 

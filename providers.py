@@ -168,15 +168,52 @@ class OllamaProvider(BaseProvider):
         if self.proxy_url:
             client_kwargs["proxy"] = self.proxy_url
         async with httpx.AsyncClient(**client_kwargs) as client:
-            # Ollama chat format
-            full_messages = [{"role": "system", "content": system}] + messages
+            # Convert messages to Ollama format (handle images)
+            ollama_messages = [{"role": "system", "content": system}]
+
+            for msg in messages:
+                ollama_msg = {"role": msg.get("role", "user")}
+                content = msg.get("content", "")
+
+                # Handle multimodal content (OpenAI/Anthropic format)
+                if isinstance(content, list):
+                    # Extract text and images
+                    text_parts = []
+                    images = []
+                    for part in content:
+                        if isinstance(part, dict):
+                            if part.get("type") == "text":
+                                text_parts.append(part.get("text", ""))
+                            elif part.get("type") == "image_url":
+                                # OpenAI format: extract base64 data from data URL
+                                url = part.get("image_url", {}).get("url", "")
+                                if url.startswith("data:"):
+                                    # Format: data:image/png;base64,<data>
+                                    base64_data = url.split(",", 1)[-1] if "," in url else ""
+                                    if base64_data:
+                                        images.append(base64_data)
+                            elif part.get("type") == "image":
+                                # Anthropic format: source.data contains base64
+                                source = part.get("source", {})
+                                if source.get("type") == "base64":
+                                    base64_data = source.get("data", "")
+                                    if base64_data:
+                                        images.append(base64_data)
+
+                    ollama_msg["content"] = " ".join(text_parts) if text_parts else "What do you see in this image?"
+                    if images:
+                        ollama_msg["images"] = images
+                else:
+                    ollama_msg["content"] = content
+
+                ollama_messages.append(ollama_msg)
 
             async with client.stream(
                 "POST",
                 f"{self.base_url}/api/chat",
                 json={
                     "model": model,
-                    "messages": full_messages,
+                    "messages": ollama_messages,
                     "stream": True,
                 },
             ) as response:

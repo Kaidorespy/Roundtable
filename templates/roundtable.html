@@ -480,22 +480,12 @@
             border-color: #da3633;
         }
 
-        /* Responder bar - compact by default, expands on hover with delay */
+        /* Responder bar - always expanded */
         .responder-bar {
             background: #161b22;
             border-bottom: 1px solid #30363d;
-            padding: 4px 16px;
-            display: none;
-            transition: padding 0.2s ease 0.15s;  /* 0.15s delay */
-        }
-
-        .responder-bar:hover {
             padding: 8px 16px;
-            transition-delay: 0.15s;  /* delay before expanding */
-        }
-
-        .responder-bar:not(:hover) {
-            transition-delay: 0s;  /* no delay when collapsing */
+            display: none;
         }
 
         .responder-bar.show {
@@ -503,60 +493,30 @@
         }
 
         .responder-label {
-            font-size: 10px;
-            color: #8b949e;
-            margin-bottom: 4px;
-            transition: all 0.2s ease 0.15s;
-        }
-
-        .responder-bar:hover .responder-label {
             font-size: 12px;
+            color: #8b949e;
             margin-bottom: 8px;
-        }
-
-        .responder-bar:not(:hover) .responder-label {
-            transition-delay: 0s;
         }
 
         .responder-avatars {
             display: flex;
-            gap: 4px;
-            flex-wrap: wrap;
-            transition: gap 0.2s ease 0.15s;
-        }
-
-        .responder-bar:hover .responder-avatars {
             gap: 8px;
-        }
-
-        .responder-bar:not(:hover) .responder-avatars {
-            transition-delay: 0s;
+            flex-wrap: wrap;
         }
 
         .responder-avatar {
-            width: 28px;
-            height: 28px;
+            width: 68px;
+            height: 68px;
             border-radius: 50%;
             background: #21262d;
-            border: 2px solid #30363d;
+            border: 3px solid #30363d;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 12px;
-            cursor: pointer;
-            transition: all 0.2s ease 0.15s;
-            overflow: hidden;
-        }
-
-        .responder-bar:hover .responder-avatar {
-            width: 80px;
-            height: 80px;
-            border-width: 3px;
             font-size: 20px;
-        }
-
-        .responder-bar:not(:hover) .responder-avatar {
-            transition-delay: 0s;
+            cursor: pointer;
+            transition: border-color 0.15s ease, transform 0.15s ease;
+            overflow: hidden;
         }
 
         .responder-avatar img {
@@ -565,22 +525,9 @@
             object-fit: cover;
         }
 
-        /* Disable clicks and hover effects until growth animation completes */
-        .responder-avatar {
-            pointer-events: none;
-        }
-
-        .responder-bar:hover .responder-avatar {
-            /* Re-enable after growth animation (0.2s transition + 0.15s delay = 0.35s) */
-            pointer-events: auto;
-            transition: all 0.2s ease 0.15s, pointer-events 0s linear 0.35s;
-        }
-
-        /* Only show selection ring after growth completes */
-        .responder-bar:hover .responder-avatar:hover {
+        .responder-avatar:hover {
             border-color: #58a6ff;
             transform: scale(1.1);
-            transition: border-color 0.15s ease 0.35s, transform 0.15s ease 0.35s;
         }
 
         .responder-avatar.loading {
@@ -643,6 +590,14 @@
             margin-bottom: 16px;
             display: flex;
             gap: 12px;
+        }
+
+        /* Message bubbles - subtle background for readability over backgrounds */
+        body.message-bubbles .message {
+            background: rgba(13, 17, 23, 0.7);
+            padding: 12px;
+            border-radius: 12px;
+            backdrop-filter: blur(4px);
         }
 
         .message-avatar {
@@ -2614,8 +2569,8 @@
             }
 
             .responder-avatar {
-                width: 60px;
-                height: 60px;
+                width: 50px;
+                height: 50px;
             }
 
             /* Room items in sidebar */
@@ -2954,7 +2909,7 @@
     </div>
 
     <!-- Partner Modal -->
-    <div class="modal-overlay" id="partnerModal">
+    <div class="modal-overlay" id="partnerModal" onclick="if(event.target === this) hidePartnerModal()">
         <div class="modal">
             <div class="modal-header">
                 <span id="partnerPinBtn" onclick="togglePartnerPin()" style="cursor: pointer; font-size: 20px; margin-right: 8px; display: none;" title="Pin room to top">☆</span>
@@ -3117,7 +3072,7 @@
     </div>
 
     <!-- Settings Modal -->
-    <div class="modal-overlay" id="settingsModal">
+    <div class="modal-overlay" id="settingsModal" onclick="if(event.target === this) hideSettingsModal()">
         <div class="modal">
             <div class="modal-header">
                 <div class="modal-title">Settings</div>
@@ -3309,6 +3264,15 @@
                     </div>
                 </div>
                 <div class="form-group">
+                    <label style="display: flex; align-items: center; gap: 10px;">
+                        <input type="checkbox" id="settingsMessageBubbles" style="width: auto;" checked>
+                        Message Bubbles
+                    </label>
+                    <div style="font-size: 12px; color: #8b949e; margin-top: 4px;">
+                        Show subtle background behind messages for better readability over room backgrounds.
+                    </div>
+                </div>
+                <div class="form-group">
                     <label>DM / Storybuilder Model</label>
                     <select id="settingsDMModel" style="width: 100%; padding: 8px; background: #21262d; border: 1px solid #30363d; border-radius: 6px; color: #c9d1d9;">
                         <option value="llama3.2">llama3.2 (default)</option>
@@ -3362,7 +3326,7 @@
     </div>
 
     <!-- Room Modal -->
-    <div class="modal-overlay" id="roomModal">
+    <div class="modal-overlay" id="roomModal" onclick="if(event.target === this) hideRoomModal()">
         <div class="modal">
             <div class="modal-header">
                 <div class="modal-title">Create Room</div>
@@ -3390,7 +3354,7 @@
     </div>
 
     <!-- Character Profile Modal -->
-    <div class="modal-overlay" id="profileModal">
+    <div class="modal-overlay" id="profileModal" onclick="if(event.target === this) hideProfileModal()">
         <div class="modal" style="max-width: 500px;">
             <div class="modal-header">
                 <div class="modal-title" id="profileModalTitle">Character Profile</div>
@@ -3422,7 +3386,7 @@
     </div>
 
     <!-- Collage Preview Modal -->
-    <div class="modal-overlay" id="collagePreviewModal">
+    <div class="modal-overlay" id="collagePreviewModal" onclick="if(event.target === this) hideCollagePreview()">
         <div class="modal" style="max-width: 700px;">
             <div class="modal-header">
                 <div class="modal-title">Collage Preview</div>
@@ -3454,7 +3418,7 @@
     </div>
 
     <!-- Selfie Queue Modal (batch selfie requests) -->
-    <div class="modal-overlay" id="characterPickerModal">
+    <div class="modal-overlay" id="characterPickerModal" onclick="if(event.target === this) hideCharacterPicker()">
         <div class="modal" style="max-width: 450px;">
             <div class="modal-header">
                 <div class="modal-title">Queue Selfies</div>
@@ -3474,7 +3438,7 @@
     </div>
 
     <!-- LoRA Gallery -->
-    <div class="modal-overlay" id="loraGalleryModal" style="background: rgba(0,0,0,0.95);">
+    <div class="modal-overlay" id="loraGalleryModal" style="background: rgba(0,0,0,0.95);" onclick="if(event.target === this) hideLoraGallery()">
         <div style="width: 100%; height: 100%; display: flex; flex-direction: column; padding: 20px; box-sizing: border-box;">
             <!-- Header -->
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-shrink: 0;">
@@ -3509,7 +3473,7 @@
     </div>
 
     <!-- Room Details Modal -->
-    <div class="modal-overlay" id="roomDetailsModal">
+    <div class="modal-overlay" id="roomDetailsModal" onclick="if(event.target === this) hideRoomDetailsModal()">
         <div class="modal" style="max-width: 500px;">
             <div class="modal-header">
                 <span id="roomDetailsPinBtn" onclick="toggleRoomDetailsPin()" style="cursor: pointer; font-size: 20px; margin-right: 8px; display: none;" title="Pin room to top">☆</span>
@@ -3688,6 +3652,8 @@
         let roomActivity = JSON.parse(localStorage.getItem('roundtable_roomActivity') || '{}');
         // Unread rooms (rooms with responses you haven't seen)
         let unreadRooms = new Set(JSON.parse(localStorage.getItem('roundtable_unreadRooms') || '[]'));
+        // Pending responses per room (for restoring typing indicator)
+        let pendingResponses = {};  // {roomId: {partnerId, avatar, avatarImage}}
 
         function markRoomActive(roomId) {
             roomActivity[roomId] = Date.now();
@@ -3871,6 +3837,9 @@
         async function init() {
             restoreSidebarStates();
             applyUISettings();  // Apply DM terminal visibility from localStorage
+            // Apply message bubbles from localStorage (default true)
+            const bubbles = localStorage.getItem('messageBubbles');
+            applyMessageBubbles(bubbles === null || bubbles === 'true');
             updateFavoritesBackgroundBtn();  // Initialize favorites background toggle button state
             await loadProviders();
             await loadPartners();
@@ -3910,6 +3879,9 @@
 
             // Wait for avatar images to load before hiding overlay
             await waitForImages();
+
+            // Extra delay to let gallery, backgrounds, and CSS settle
+            await new Promise(resolve => setTimeout(resolve, 400));
 
             // Hide loading overlay
             const overlay = $('loadingOverlay');
@@ -4910,6 +4882,15 @@
                 // Clear unread indicator for this room
                 clearRoomUnread(roomId);
 
+                // Restore typing indicator if there's a pending response for this room
+                const pending = pendingResponses[roomId];
+                if (pending) {
+                    typingAvatar.textContent = pending.avatar || '...';
+                    typing.classList.add('show');
+                } else {
+                    typing.classList.remove('show');
+                }
+
                 // Restore any unsent draft for this room
                 const draft = loadDraft(roomId);
                 input.value = draft;
@@ -5584,6 +5565,12 @@
                 if (partner) {
                     typingAvatar.textContent = partner.avatar;
                     typing.classList.add('show');
+                    // Track pending response
+                    pendingResponses[sentToRoomId] = {
+                        partnerId: partner.id,
+                        avatar: partner.avatar,
+                        avatarImage: partner.avatar_image
+                    };
                 }
             }
 
@@ -5639,6 +5626,9 @@
                 if (pendingMsg) pendingMsg.remove();
                 showSystemMessage('Error: ' + err.message, 'error');
             }
+
+            // Clear pending response for this room
+            delete pendingResponses[sentToRoomId];
 
             isLoading = false;
             $('sendBtn').disabled = false;
@@ -7910,6 +7900,9 @@
             const partner = partners.find(p => p.id === partnerId);
             if (!partner) return;
 
+            // Capture room ID for pending tracking (user might switch rooms during request)
+            const requestRoomId = currentRoomId;
+
             isLoading = true;
 
             // Track chain turns
@@ -7921,6 +7914,13 @@
             // Show typing indicator
             typingAvatar.textContent = partner.avatar;
             typing.classList.add('show');
+
+            // Track pending response for this room (so it persists across room switches)
+            pendingResponses[requestRoomId] = {
+                partnerId: partnerId,
+                avatar: partner.avatar,
+                avatarImage: partner.avatar_image
+            };
 
             // Disable responder avatars
             document.querySelectorAll('.responder-avatar').forEach(a => a.classList.add('loading'));
@@ -7984,6 +7984,9 @@
 
             isLoading = false;
             document.querySelectorAll('.responder-avatar').forEach(a => a.classList.remove('loading'));
+
+            // Clear pending response for this room
+            delete pendingResponses[requestRoomId];
         }
 
         function confirmClear() {
@@ -9417,6 +9420,8 @@
                 $('settingsUserPhysical').value = data.user_physical_description || '';
                 $('settingsGlobalPrompt').value = data.global_system_prompt || '';
                 $('settingsVoiceEnabled').checked = data.voice_enabled || false;
+                $('settingsMessageBubbles').checked = data.message_bubbles !== false;  // Default true
+                applyMessageBubbles(data.message_bubbles !== false);
                 $('settingsAnthropicKey').value = data.anthropic_api_key || '';
                 $('settingsOpenAIKey').value = data.openai_api_key || '';
                 $('settingsElevenLabsKey').value = data.elevenlabs_api_key || '';
@@ -10429,6 +10434,7 @@
                         user_physical_description: $('settingsUserPhysical').value.trim(),
                         global_system_prompt: $('settingsGlobalPrompt').value.trim(),
                         voice_enabled: $('settingsVoiceEnabled').checked,
+                        message_bubbles: $('settingsMessageBubbles').checked,
                         anthropic_api_key: $('settingsAnthropicKey').value.trim(),
                         openai_api_key: $('settingsOpenAIKey').value.trim(),
                         elevenlabs_api_key: $('settingsElevenLabsKey').value.trim(),
@@ -10464,6 +10470,9 @@
                     savePresetSettings($('settingsModelPreset').value);
 
                     applyUISettings();
+
+                    // Apply message bubbles
+                    applyMessageBubbles($('settingsMessageBubbles').checked);
 
                     // Sync voice toggle button
                     voiceEnabled = $('settingsVoiceEnabled').checked;
@@ -10505,6 +10514,16 @@
                 $('dmTerminal').style.display = 'none';
                 dmTerminalVisible = false;
             }
+        }
+
+        function applyMessageBubbles(enabled) {
+            if (enabled) {
+                document.body.classList.add('message-bubbles');
+            } else {
+                document.body.classList.remove('message-bubbles');
+            }
+            // Save to localStorage for persistence before settings load
+            localStorage.setItem('messageBubbles', enabled);
         }
 
         async function quitServer() {

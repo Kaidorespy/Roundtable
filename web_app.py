@@ -360,6 +360,8 @@ def load_persisted_settings():
                 settings.storybuilder_model = data['storybuilder_model']
             if 'voice_enabled' in data:
                 settings.voice_enabled = data['voice_enabled']
+            if 'message_bubbles' in data:
+                settings.message_bubbles = data['message_bubbles']
             if 'anthropic_api_key' in data:
                 settings.anthropic_api_key = data['anthropic_api_key']
             if 'openai_api_key' in data:
@@ -416,6 +418,66 @@ def clean_model_tokens(text: str) -> str:
     text = re.sub(r'<\|start_header_id\|>.*?<\|end_header_id\|>', '', text)
     # Clean up any resulting extra whitespace at start
     return text.strip()
+
+
+# ============================================================================
+# Vision Model Helpers (llava fallback for non-vision models)
+# ============================================================================
+
+# Models known to have vision capabilities
+VISION_MODELS = {
+    # Ollama vision models
+    "llava", "llava:7b", "llava:13b", "llava:34b", "llava:latest",
+    "bakllava", "llava-llama3", "llava-phi3", "moondream", "minicpm-v",
+    # OpenAI vision models
+    "gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-4-vision-preview",
+}
+
+# Providers where all models have vision
+VISION_PROVIDERS = {"anthropic"}  # All Claude 3+ models have vision
+
+
+def model_has_vision(provider: str, model: str) -> bool:
+    """Check if a model has native vision capabilities."""
+    if provider in VISION_PROVIDERS:
+        return True
+    # Check model name (handle versioned names like "llava:7b-v1.6")
+    model_base = model.split(":")[0].lower() if ":" in model else model.lower()
+    return model_base in VISION_MODELS or model.lower() in VISION_MODELS
+
+
+async def describe_image_with_vision(image_data: str, image_type: str = "image/png") -> str:
+    """Use the vision model (llava) to describe an image for non-vision models."""
+    import httpx
+
+    vision_model = settings.vision_model
+    ollama_url = settings.ollama_base_url.rstrip("/")
+
+    try:
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            response = await client.post(
+                f"{ollama_url}/api/chat",
+                json={
+                    "model": vision_model,
+                    "messages": [
+                        {
+                            "role": "user",
+                            "content": "Describe this image in detail. Include: the subject(s), their appearance, expression, pose, clothing, setting, lighting, mood, and any notable details. Be specific and vivid.",
+                            "images": [image_data]
+                        }
+                    ],
+                    "stream": False,
+                },
+            )
+
+            if response.status_code == 200:
+                data = response.json()
+                return data.get("message", {}).get("content", "Unable to describe image.")
+            else:
+                return f"[Vision model error: {response.status_code}]"
+
+    except Exception as e:
+        return f"[Vision model unavailable: {e}]"
 
 
 async def generate_response_async(partner: Partner, messages: list, system: str, max_retries: int = 3) -> str:
@@ -507,7 +569,8 @@ When asked to describe your appearance, give a vivid, visual description of your
 Describe: your face, expression, clothing, posture, the lighting on you, your surroundings.
 Be specific and painterly. This description will be used to create a portrait of you.
 Keep it under 100 words. Use comma-separated descriptive phrases.
-Do NOT break character. Do NOT explain. Just describe yourself as if for an artist."""
+Do NOT break character. Do NOT explain. Just describe yourself as if for an artist.
+IMPORTANT: Only describe physical traits that were explicitly established. Do NOT invent race, ethnicity, skin color, or demographic details that weren't specified."""
 
             # Generate self-description (AI call)
             update_job(job_id, 'generating_description')
@@ -1391,6 +1454,18 @@ def ambient_pull(room_id):
 @app.route('/rooms/<room_id>/clear', methods=['POST'])
 def clear_room(room_id):
     """Clear messages in a room."""
+    room = data_store.get_room(room_id)
+
+    # Clear DM canon for characters in this room
+    if room:
+        partners = data_store.get_partners()
+        room_partners = room.get_partners_in_room(partners)
+        for partner in room_partners:
+            if hasattr(partner, 'dm_canon') and partner.dm_canon:
+                print(f"[Clear Room] Clearing DM canon for {partner.name}")
+                partner.dm_canon = []
+        data_store.save()
+
     data_store.clear_room(room_id)
     return jsonify({'status': 'cleared'})
 
@@ -2062,25 +2137,37 @@ def respond():
         if image_file.exists():
             try:
                 image_data = base64.b64encode(image_file.read_bytes()).decode('utf-8')
-                # Add image to the last message or create a new one
-                image_message = {
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "image",
-                            "source": {
-                                "type": "base64",
-                                "media_type": "image/png",
-                                "data": image_data
+                has_vision = model_has_vision(partner.provider, partner.model)
+
+                if has_vision:
+                    # Model has vision - send image directly
+                    image_message = {
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "image",
+                                "source": {
+                                    "type": "base64",
+                                    "media_type": "image/png",
+                                    "data": image_data
+                                }
+                            },
+                            {
+                                "type": "text",
+                                "text": f"({settings.user_name} shared this image with the room)"
                             }
-                        },
-                        {
-                            "type": "text",
-                            "text": f"({settings.user_name} shared this image with the room)"
-                        }
-                    ]
-                }
-                messages.append(image_message)
+                        ]
+                    }
+                    messages.append(image_message)
+                else:
+                    # No vision - use llava to describe the image first
+                    print(f"[Respond] Partner {partner.name} uses {partner.model} (no vision) - using {settings.vision_model} fallback")
+                    image_description = run_async(describe_image_with_vision(image_data, "image/png"))
+                    messages.append({
+                        "role": "user",
+                        "content": f"({settings.user_name} shared an image with the room)\n\nImage description: {image_description}"
+                    })
+
                 # Add instruction about the image
                 system += f"\n\n{settings.user_name} has shared an image with the room. You can see it and react naturally if you want, or acknowledge it briefly and continue the conversation."
                 # Mark as seen
@@ -2347,6 +2434,7 @@ def _save_settings():
         'saved_system_prompts': settings.saved_system_prompts,
         'storybuilder_model': settings.storybuilder_model,
         'voice_enabled': settings.voice_enabled,
+        'message_bubbles': settings.message_bubbles,
     }
     settings_file.write_text(json.dumps(settings_data, indent=2))
 
@@ -2378,6 +2466,7 @@ def get_settings():
         'user_avatar': settings.user_avatar,
         'global_system_prompt': settings.global_system_prompt,
         'voice_enabled': settings.voice_enabled,
+        'message_bubbles': settings.message_bubbles,
         'openai_available': bool(openai_api_key),  # For mic button visibility
         'elevenlabs_available': bool(elevenlabs_api_key),  # For voice toggle visibility
         'anthropic_api_key': settings.anthropic_api_key or '',
@@ -2458,6 +2547,8 @@ def update_settings():
             settings.storybuilder_model = data['storybuilder_model']
         if 'voice_enabled' in data:
             settings.voice_enabled = data['voice_enabled']
+        if 'message_bubbles' in data:
+            settings.message_bubbles = data['message_bubbles']
         if 'anthropic_api_key' in data and data['anthropic_api_key']:
             settings.anthropic_api_key = data['anthropic_api_key']
         if 'openai_api_key' in data and data['openai_api_key']:
@@ -2511,6 +2602,7 @@ def update_settings():
             'saved_system_prompts': settings.saved_system_prompts,
             'storybuilder_model': settings.storybuilder_model,
             'voice_enabled': settings.voice_enabled,
+            'message_bubbles': settings.message_bubbles,
             'openai_api_key': settings.openai_api_key,
             'elevenlabs_api_key': settings.elevenlabs_api_key,
             'model_preset': data.get('model_preset', 'illustrious'),
@@ -3434,24 +3526,38 @@ def share_image():
             role = "user" if m.speaker_id == "user" else "assistant"
             messages.append({"role": role, "content": m.content})
 
-        # Add the image share as the final message
-        messages.append({
-            "role": "user",
-            "content": [
-                {
-                    "type": "image",
-                    "source": {
-                        "type": "base64",
-                        "media_type": image_type,
-                        "data": image_data
+        # Check if partner's model has native vision
+        has_vision = model_has_vision(partner.provider, partner.model)
+
+        if has_vision:
+            # Model has vision - send image directly
+            messages.append({
+                "role": "user",
+                "content": [
+                    {
+                        "type": "image",
+                        "source": {
+                            "type": "base64",
+                            "media_type": image_type,
+                            "data": image_data
+                        }
+                    },
+                    {
+                        "type": "text",
+                        "text": user_message
                     }
-                },
-                {
-                    "type": "text",
-                    "text": user_message
-                }
-            ]
-        })
+                ]
+            })
+        else:
+            # No vision - use llava to describe the image first
+            print(f"[share-image] Partner {partner.name} uses {partner.model} (no vision) - using {settings.vision_model} fallback")
+            image_description = run_async(describe_image_with_vision(image_data, image_type))
+
+            # Send the description as text instead of the raw image
+            messages.append({
+                "role": "user",
+                "content": f"[{settings.user_name} shares an image with you]\n\nImage description: {image_description}\n\n{user_message}"
+            })
 
         # Get full partner context (including knowledge of other participants)
         all_partners = data_store.get_partners()
@@ -3647,6 +3753,16 @@ Toolbar buttons:
 
     elif command == 'clear':
         if room_id:
+            # Clear DM canon for characters in this room
+            if room:
+                partners = data_store.get_partners()
+                room_partners = room.get_partners_in_room(partners)
+                for p in room_partners:
+                    if hasattr(p, 'dm_canon') and p.dm_canon:
+                        print(f"[/clear] Clearing DM canon for {p.name}")
+                        p.dm_canon = []
+                data_store.save()
+
             data_store.clear_room(room_id)
 
             # Optionally clear images too
@@ -3933,17 +4049,33 @@ what you like or don't like about it, or how it makes you feel to see yourself d
         if not room:
             return jsonify({'type': 'error', 'message': 'No room found'})
 
-        # Find a partner to generate the scene description (prefer room's partner)
+        # Find a partner to generate the scene description (prefer room's partner with working model)
         scene_partner = None
+        candidates = []
+
         if room.partner_id:
-            scene_partner = data_store.get_partner(room.partner_id)
+            p = data_store.get_partner(room.partner_id)
+            if p:
+                candidates = [p]
         elif room.partner_ids:
-            scene_partner = data_store.get_partner(room.partner_ids[0])
+            candidates = [data_store.get_partner(pid) for pid in room.partner_ids if data_store.get_partner(pid)]
         else:
-            # Common room - pick any partner
-            all_p = data_store.get_partners()
-            if all_p:
-                scene_partner = all_p[0]
+            # Common room - all partners are candidates
+            candidates = data_store.get_partners()
+
+        # Pick a partner with a working model (prefer Anthropic/OpenAI, then check Ollama availability)
+        available_ollama = provider_manager.get_models_for_provider('ollama')
+        for p in candidates:
+            if p.provider in ('anthropic', 'openai'):
+                scene_partner = p
+                break
+            elif p.provider == 'ollama' and p.model in available_ollama:
+                scene_partner = p
+                break
+
+        # Fallback: just use first candidate and hope for the best
+        if not scene_partner and candidates:
+            scene_partner = candidates[0]
 
         if not scene_partner:
             return jsonify({'type': 'error', 'message': 'No partner available to describe the scene'})
@@ -4245,6 +4377,112 @@ def _build_simple_dm_context(room, room_partners: list) -> str:
     return "\n\n".join(sections)
 
 
+def _extract_dm_canon(question: str, dm_response: str, room_partners: list) -> dict:
+    """
+    Extract canon facts from a DM interaction and attribute them to characters.
+    Returns {partner_id: [list of facts]} for characters mentioned.
+    """
+    import httpx
+
+    if not room_partners:
+        return {}
+
+    # Build character list for the extraction prompt
+    char_list = "\n".join([f"- {p.name} (id: {p.id})" for p in room_partners])
+
+    extraction_prompt = f"""Analyze this DM (Dungeon Master) interaction and extract any facts that were established about specific characters.
+
+CHARACTERS IN SCENE:
+{char_list}
+
+PLAYER QUESTION: {question}
+
+DM RESPONSE: {dm_response}
+
+Extract ONLY concrete facts that were established about specific characters (not general world facts).
+For each character mentioned, list the specific facts revealed about them.
+
+Respond in this exact JSON format (no other text):
+{{
+  "character_id_here": ["fact 1", "fact 2"],
+  "another_character_id": ["fact about them"]
+}}
+
+If no character-specific facts were established, respond with: {{}}
+
+Be specific and concise. Only include facts directly stated, not implications."""
+
+    model_to_use = settings.storybuilder_model
+    available_models = provider_manager.get_models_for_provider('ollama')
+    if model_to_use not in available_models and available_models:
+        model_to_use = available_models[0]
+
+    try:
+        with httpx.Client(timeout=60.0) as client:
+            response = client.post(
+                f"{settings.ollama_base_url}/api/chat",
+                json={
+                    "model": model_to_use,
+                    "messages": [
+                        {"role": "system", "content": "You extract structured information from text. Always respond with valid JSON only."},
+                        {"role": "user", "content": extraction_prompt}
+                    ],
+                    "stream": False,
+                }
+            )
+            if response.status_code == 200:
+                response_data = response.json()
+                content = response_data.get("message", {}).get("content", "{}").strip()
+
+                # Try to parse JSON from the response
+                import json
+                # Handle potential markdown code blocks
+                if content.startswith("```"):
+                    content = content.split("```")[1]
+                    if content.startswith("json"):
+                        content = content[4:]
+                    content = content.strip()
+
+                try:
+                    extracted = json.loads(content)
+                    print(f"[DM Canon] Extracted: {extracted}")
+                    return extracted
+                except json.JSONDecodeError as e:
+                    print(f"[DM Canon] Failed to parse JSON: {e}")
+                    print(f"[DM Canon] Raw content: {content}")
+                    return {}
+            else:
+                print(f"[DM Canon] Ollama error: {response.status_code}")
+                return {}
+    except Exception as e:
+        print(f"[DM Canon] Error extracting canon: {e}")
+        return {}
+
+
+def _apply_dm_canon(extracted_facts: dict):
+    """Apply extracted DM canon facts to the relevant characters."""
+    if not extracted_facts:
+        return
+
+    for partner_id, facts in extracted_facts.items():
+        if not facts:
+            continue
+
+        partner = data_store.get_partner(partner_id)
+        if partner:
+            # Initialize dm_canon if needed
+            if not hasattr(partner, 'dm_canon') or partner.dm_canon is None:
+                partner.dm_canon = []
+
+            # Add new facts (avoid duplicates)
+            for fact in facts:
+                if fact and fact not in partner.dm_canon:
+                    partner.dm_canon.append(fact)
+                    print(f"[DM Canon] Added to {partner.name}: {fact}")
+
+            data_store.save()
+
+
 @app.route('/rooms/<room_id>/dm', methods=['POST'])
 def ask_dm_public(room_id):
     """Ask the DM a public question - everyone sees the Q&A."""
@@ -4321,6 +4559,10 @@ Write in a narrative/descriptive style, not as dialogue."""
     except Exception as e:
         print(f"[DM Public] Error: {e}")
         return jsonify({'error': f'DM unavailable: {e}'}), 500
+
+    # Extract and apply canon facts from this DM interaction
+    extracted = _extract_dm_canon(question, dm_response, room_partners)
+    _apply_dm_canon(extracted)
 
     # Create the DM message
     dm_message = Message(
@@ -4549,6 +4791,10 @@ Be helpful and provide insider information if relevant. This is between you and 
         print(f"[DM Private] Error: {e}")
         return jsonify({'error': f'DM unavailable: {e}'}), 500
 
+    # Extract and apply canon facts from this DM interaction
+    extracted = _extract_dm_canon(question, dm_response, room_partners)
+    _apply_dm_canon(extracted)
+
     history.append({"role": "assistant", "content": dm_response})
 
     return jsonify({
@@ -4593,12 +4839,12 @@ def text_to_speech():
     try:
         audio_format = 'mp3'  # Default format
 
-        if voice.startswith('piper:'):
-            # Piper local TTS (free, runs locally)
-            voice_name = voice.split(':', 1)[1]
-            audio_data = _piper_tts(text, voice_name)
-            audio_format = 'wav'  # Piper outputs WAV
-        elif voice.startswith('elevenlabs:'):
+        # Piper disabled for v1 - Windows support incomplete
+        # if voice.startswith('piper:'):
+        #     voice_name = voice.split(':', 1)[1]
+        #     audio_data = _piper_tts(text, voice_name)
+        #     audio_format = 'wav'  # Piper outputs WAV
+        if voice.startswith('elevenlabs:'):
             # ElevenLabs TTS
             voice_id = voice.split(':', 1)[1]
             audio_data = _elevenlabs_tts(text, voice_id)
@@ -4677,87 +4923,16 @@ def _elevenlabs_tts(text: str, voice_id: str) -> bytes:
 
 
 # ============================================================================
-# Piper TTS - Free local text-to-speech
-# To install: pip install piper-tts
-# Models download automatically on first use
-# Easy to remove: just delete this section and the piper: prefix check above
+# Piper TTS - Disabled for v1 (Windows support incomplete)
+# Uncomment in future version when cross-platform issues are resolved
 # ============================================================================
 
-def _piper_tts(text: str, voice: str) -> bytes:
-    """Generate speech using Piper (local, free TTS).
-
-    Voice format: language-speaker-quality (e.g., en_US-amy-medium)
-    Models are downloaded automatically to ~/.local/share/piper/ on first use.
-    """
-    import subprocess
-    import tempfile
-    import sys
-
-    # Default voice if not specified or invalid
-    if not voice or voice == 'default':
-        voice = 'en_US-amy-medium'
-
-    # Create temp file for output
-    with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as tmp:
-        tmp_path = tmp.name
-
-    try:
-        # Try direct piper command first, then fall back to python -m piper
-        piper_commands = [
-            ['piper', '--model', voice, '--output_file', tmp_path],
-            [sys.executable, '-m', 'piper', '--model', voice, '--output_file', tmp_path],
-        ]
-
-        result = None
-        for cmd in piper_commands:
-            try:
-                result = subprocess.run(
-                    cmd,
-                    input=text.encode('utf-8'),
-                    capture_output=True,
-                    timeout=30  # 30 second timeout
-                )
-                if result.returncode == 0:
-                    break
-            except FileNotFoundError:
-                continue
-
-        if result is None or result.returncode != 0:
-            error_msg = result.stderr.decode('utf-8', errors='replace') if result else 'Piper not found'
-            raise RuntimeError(f"Piper failed: {error_msg}")
-
-        # Read the generated audio
-        with open(tmp_path, 'rb') as f:
-            audio_data = f.read()
-
-        return audio_data
-
-    finally:
-        # Clean up temp file
-        import os
-        if os.path.exists(tmp_path):
-            os.remove(tmp_path)
-
+# def _piper_tts(text: str, voice: str) -> bytes:
+#     """Generate speech using Piper (local, free TTS)."""
+#     pass
 
 def _check_piper_available() -> bool:
-    """Check if Piper TTS is installed and available."""
-    import subprocess
-    import sys
-
-    # Try direct command first, then python -m
-    commands = [
-        ['piper', '--help'],
-        [sys.executable, '-m', 'piper', '--help'],
-    ]
-
-    for cmd in commands:
-        try:
-            result = subprocess.run(cmd, capture_output=True, timeout=5)
-            if result.returncode == 0:
-                return True
-        except (FileNotFoundError, subprocess.TimeoutExpired):
-            continue
-
+    """Piper disabled for v1."""
     return False
 
 
@@ -4832,14 +5007,8 @@ def get_available_voices():
             {'id': 'shimmer', 'name': 'Shimmer', 'description': 'Soft, gentle'},
         ],
         'elevenlabs': [],  # Would need to fetch from API
-        'piper': [
-            # Common English voices - models download automatically on first use
-            {'id': 'piper:en_US-amy-medium', 'name': 'Amy (US)', 'description': 'Female, American'},
-            {'id': 'piper:en_US-lessac-medium', 'name': 'Lessac (US)', 'description': 'Female, American, clear'},
-            {'id': 'piper:en_US-libritts-high', 'name': 'LibriTTS (US)', 'description': 'Neutral, multi-speaker'},
-            {'id': 'piper:en_GB-alba-medium', 'name': 'Alba (UK)', 'description': 'Female, British'},
-            {'id': 'piper:en_GB-cori-medium', 'name': 'Cori (UK)', 'description': 'Female, British'},
-        ]
+        # Piper disabled for v1
+        'piper': []
     }
 
     # Check if ElevenLabs is configured
