@@ -1,6 +1,9 @@
+
 # Roundtable V1
 
 Multi-character AI companion chat with memory, image generation, and voice.
+
+<img width="2560" height="1439" alt="saverr" src="https://github.com/user-attachments/assets/6c3732db-c9d5-4cf6-ae3a-6f672ca8eed5" />
 
 ## Features
 
