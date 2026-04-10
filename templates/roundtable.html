@@ -3451,6 +3451,7 @@
                     <h2 style="margin: 0; color: #c9d1d9;">LoRA Gallery</h2>
                     <button class="btn" onclick="scanLoras()" title="Refresh LoRAs from ComfyUI">🔄 Refresh</button>
                     <button class="btn" onclick="addLoraCategory()" title="Add category for organizing LoRAs" style="border-color: #30363d;">+ Category</button>
+                    <button class="btn" onclick="clearAllLoras()" title="Disable all LoRAs" style="border-color: #30363d;">Clear All</button>
                     <span id="loraGalleryStatus" style="color: #8b949e; font-size: 14px;"></span>
                 </div>
                 <div style="display: flex; align-items: center; gap: 12px;">
@@ -7106,6 +7107,7 @@
         let loraGalleryData = [];  // Cached LoRA data
         let loraCategories = [];   // Available categories
         let pendingRegeneration = null;  // Stores {prompt, type, partnerId} when in regen mode
+        let viewingLoraPreviewsFor = null;  // When set, shows preview management for this LoRA name
 
         async function showLoraGallery() {
             $('loraGalleryModal').classList.add('show');
@@ -7144,6 +7146,8 @@
                 $('loraGalleryNormalButtons').style.display = 'flex';
                 $('loraGalleryRegenButtons').style.display = 'none';
             }
+            // Reset preview manager mode
+            viewingLoraPreviewsFor = null;
         }
 
         async function showLoraGalleryForRegeneration(prompt, type, partnerId) {
@@ -7261,6 +7265,12 @@
         }
 
         function renderLoraGallery() {
+            // If we're viewing previews for a specific LoRA, render that instead
+            if (viewingLoraPreviewsFor) {
+                renderLoraPreviewManager();
+                return;
+            }
+
             const container = $('loraGalleryGrid');
             container.innerHTML = '';
             container.style.display = 'block';  // Change from grid to block for sections
@@ -7360,7 +7370,27 @@
             const card = document.createElement('div');
             card.className = 'lora-card' + (lora.enabled ? ' enabled' : '');
             card.onclick = () => toggleLoraCard(index);
-            card.oncontextmenu = (e) => { e.preventDefault(); showLoraWeightInput(index, card); };
+            card.oncontextmenu = (e) => { e.preventDefault(); showLoraPreviewManager(lora.name); };
+            card.onwheel = (e) => {
+                e.preventDefault();
+                const delta = e.deltaY > 0 ? -0.1 : 0.1;  // Scroll up = increase, down = decrease
+                let newWeight = (loraGalleryData[index].weight || 1.0) + delta;
+                newWeight = Math.round(Math.max(0.1, Math.min(2.0, newWeight)) * 10) / 10;  // Clamp and round
+                loraGalleryData[index].weight = newWeight;
+
+                // Update or create weight label
+                let label = wrapper.querySelector('.lora-weight-label');
+                if (newWeight !== 1.0) {
+                    if (!label) {
+                        label = document.createElement('div');
+                        label.className = 'lora-weight-label';
+                        wrapper.insertBefore(label, wrapper.firstChild);
+                    }
+                    label.textContent = newWeight.toFixed(1);
+                } else if (label) {
+                    label.remove();
+                }
+            };
 
             if (lora.previews && lora.previews.length > 0) {
                 const randomPreview = lora.previews[Math.floor(Math.random() * lora.previews.length)];
@@ -7443,6 +7473,96 @@
             }
         }
 
+        function showLoraPreviewManager(loraName) {
+            viewingLoraPreviewsFor = loraName;
+            renderLoraPreviewManager();
+        }
+
+        function hideLoraPreviewManager() {
+            viewingLoraPreviewsFor = null;
+            renderLoraGallery();
+        }
+
+        function renderLoraPreviewManager() {
+            const lora = loraGalleryData.find(l => l.name === viewingLoraPreviewsFor);
+            if (!lora) return;
+
+            const container = $('loraGalleryGrid');
+            container.innerHTML = '';
+            container.style.display = 'block';
+
+            // Header with back button
+            const header = document.createElement('div');
+            header.style.cssText = 'display: flex; align-items: center; gap: 16px; margin-bottom: 20px;';
+            header.innerHTML = `
+                <button class="btn" onclick="hideLoraPreviewManager()" style="padding: 6px 12px;">← Back</button>
+                <h3 style="margin: 0; color: #c9d1d9;">${escapeHtml(lora.display_name)} - Preview Images</h3>
+                <span style="color: #8b949e; font-size: 14px;">(${lora.previews?.length || 0} images)</span>
+            `;
+            container.appendChild(header);
+
+            // Preview grid
+            const grid = document.createElement('div');
+            grid.style.cssText = 'display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px;';
+
+            if (!lora.previews || lora.previews.length === 0) {
+                grid.innerHTML = '<div style="color: #8b949e; padding: 40px; text-align: center;">No preview images yet.<br><br>Use "Set as LoRA Preview" in the lightbox to add images.</div>';
+            } else {
+                lora.previews.forEach((previewPath, idx) => {
+                    const wrapper = document.createElement('div');
+                    wrapper.style.cssText = 'position: relative; border-radius: 8px; overflow: hidden; background: #21262d;';
+
+                    const img = document.createElement('img');
+                    img.src = pathToUrl(previewPath) + '?v=' + avatarCacheVersion;
+                    img.style.cssText = 'width: 100%; aspect-ratio: 1; object-fit: cover; display: block;';
+                    img.onerror = () => { wrapper.style.display = 'none'; };
+
+                    const deleteBtn = document.createElement('div');
+                    deleteBtn.style.cssText = 'position: absolute; top: 8px; right: 8px; width: 28px; height: 28px; background: rgba(218,54,51,0.9); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; opacity: 0; transition: opacity 0.15s; font-size: 18px; color: white;';
+                    deleteBtn.textContent = '×';
+                    deleteBtn.title = 'Remove this preview';
+                    deleteBtn.onclick = () => removeLoraPreviewImage(lora.name, previewPath);
+
+                    wrapper.onmouseenter = () => { deleteBtn.style.opacity = '1'; };
+                    wrapper.onmouseleave = () => { deleteBtn.style.opacity = '0'; };
+
+                    wrapper.appendChild(img);
+                    wrapper.appendChild(deleteBtn);
+                    grid.appendChild(wrapper);
+                });
+            }
+
+            container.appendChild(grid);
+
+            // Update modal title
+            $('loraGalleryModal').querySelector('h2').textContent = `LoRA Previews - ${lora.display_name}`;
+        }
+
+        async function removeLoraPreviewImage(loraName, imagePath) {
+            try {
+                const res = await fetch(`/loras/${encodeURIComponent(loraName)}/preview`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ image_path: imagePath })
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    // Update local data
+                    const lora = loraGalleryData.find(l => l.name === loraName);
+                    if (lora) {
+                        lora.previews = data.previews || [];
+                    }
+                    // Re-render the preview manager
+                    renderLoraPreviewManager();
+                } else {
+                    showSystemMessage('Failed to remove preview', 'error');
+                }
+            } catch (err) {
+                showSystemMessage('Failed to remove preview', 'error');
+            }
+        }
+
         async function deleteLora(loraName) {
             if (!confirm(`Remove "${loraName}" from the gallery?\n\nThis won't delete the file, just hides it from the gallery.`)) return;
 
@@ -7522,6 +7642,13 @@
         function updateLoraCount() {
             const count = loraGalleryData.filter(l => l.enabled).length;
             $('loraGalleryCount').textContent = `${count} enabled`;
+        }
+
+        function clearAllLoras() {
+            loraGalleryData.forEach(lora => {
+                lora.enabled = false;
+            });
+            renderLoraGallery();
         }
 
         async function scanLoras() {
