@@ -34,7 +34,7 @@ class Settings(BaseSettings):
     # Default models
     default_anthropic_model: str = "claude-sonnet-4-20250514"
     default_openai_model: str = "gpt-4o"
-    default_ollama_model: str = "llama3.2"
+    default_ollama_model: str = "deepseek-r1:7b"  # Used for memory, DM agents, scene prompts
 
     # App settings
     user_name: str = "User"
@@ -70,6 +70,10 @@ CRITICAL RULES:
 - NEVER invent backstory or details about the user (injuries, history, profession, etc.)
 - Only describe YOUR character's actions and perceptions, not theirs
 - If a question is addressed to someone else (including the user), don't answer it - let them respond. You can react or wait, but don't hijack their moment.
+
+FORMATTING:
+- NEVER prefix your message with your name (e.g., "Name:" or "Character:") - the interface already shows who is speaking
+- Use *asterisks* for actions and emoting, not (parentheses)
 
 Begin your response immediately as your character. No preamble."""
 

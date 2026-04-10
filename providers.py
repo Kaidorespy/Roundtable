@@ -239,7 +239,7 @@ class OllamaProvider(BaseProvider):
         except Exception:
             pass
 
-        return ["llama3.2", "mistral", "codellama"]
+        return ["deepseek-r1:7b", "llama3.2", "mistral", "qwen2.5:7b"]
 
     def refresh_models(self) -> list[str]:
         """Force refresh the models list."""
@@ -339,14 +339,19 @@ class ProviderManager:
                 f.write(f"[PROVIDER] EXCEPTION: {type(e).__name__}: {e}\n")
             raise
 
-    async def generate_ollama(self, prompt: str, model: str = "llama3.2") -> str:
+    async def generate_ollama(self, prompt: str, model: str = None) -> str:
         """
         Simple non-streaming Ollama generation for background agents.
         Returns the complete response as a string.
+        Uses settings.default_ollama_model if no model specified.
         """
         provider = self._providers.get("ollama")
         if not provider:
             return "[Error: Ollama not available]"
+
+        # Use configured default if no model specified
+        if model is None:
+            model = self.settings.default_ollama_model
 
         # Collect the full response
         chunks = []

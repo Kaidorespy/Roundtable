@@ -511,7 +511,7 @@ def get_generator() -> Optional[ImageGenerator]:
     return _generator
 
 
-async def generate_scene_prompt(messages: list[dict], model: str = "llama3.2") -> str:
+async def generate_scene_prompt(messages: list[dict], model: str = "deepseek-r1:7b") -> str:
     """
     Use Ollama to generate an SD prompt from recent conversation.
 
@@ -558,7 +558,7 @@ async def ask_character_self_description(
     character_description: str,
     character_name: str,
     context: str = "",
-    model: str = "llama3.2"
+    model: str = "deepseek-r1:7b"
 ) -> str:
     """
     Ask a character to describe their own appearance for portrait generation.
@@ -613,7 +613,7 @@ Do NOT break character. Do NOT explain what you're doing. Just describe yourself
 async def generate_scene_from_conversation(
     messages: list[dict],
     room_context: str = "",
-    model: str = "llama3.2"
+    model: str = "deepseek-r1:7b"
 ) -> str:
     """
     Generate an SD prompt for the current scene/moment in a conversation.

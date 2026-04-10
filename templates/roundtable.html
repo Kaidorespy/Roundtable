@@ -3181,6 +3181,11 @@
                             <div style="font-size: 11px; color: #6e7681; margin-top: 2px;">For local AI models (default: http://localhost:11434)</div>
                         </div>
                         <div>
+                            <label style="font-size: 13px; color: #8b949e;">Default Ollama Model</label>
+                            <input type="text" id="settingsDefaultOllamaModel" placeholder="deepseek-r1:7b" style="font-family: monospace;">
+                            <div style="font-size: 11px; color: #6e7681; margin-top: 2px;">Used for memory, DM agents, and new characters (default: deepseek-r1:7b)</div>
+                        </div>
+                        <div>
                             <label style="font-size: 13px; color: #8b949e;">ComfyUI URL</label>
                             <input type="text" id="settingsComfyUrl" placeholder="http://localhost:8188" style="font-family: monospace;">
                             <div style="font-size: 11px; color: #6e7681; margin-top: 2px;">For image generation (default: http://localhost:8188)</div>
@@ -5773,12 +5778,9 @@
             const imgUrl = pathToUrl(imagePath);
             const img = document.createElement('img');
             img.src = imgUrl;
-            img.style.cssText = 'max-width: 512px; border-radius: 8px;';
-            if (partnerId) {
-                img.style.cursor = 'pointer';
-                img.title = 'Click to set as avatar';
-                img.onclick = () => selectAvatar(partnerId, imagePath);
-            }
+            img.style.cssText = 'max-width: 512px; border-radius: 8px; cursor: pointer;';
+            img.title = 'Click to view';
+            img.onclick = () => openLightbox([{path: imagePath, type: partnerId ? 'selfie' : 'scene', partner_id: partnerId}], 0);
             img.onerror = () => div.innerHTML = 'Image failed to load';
             div.appendChild(img);
             chat.insertBefore(div, typing);
@@ -5788,13 +5790,15 @@
         function showImageGrid(imagePaths, partnerId) {
             const div = document.createElement('div');
             div.style.cssText = 'display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 12px; max-width: 540px;';
+            // Build lightbox image array for navigation
+            const lightboxImgs = imagePaths.map(path => ({path: path, type: 'selfie', partner_id: partnerId}));
             imagePaths.forEach((path, i) => {
                 const imgUrl = pathToUrl(path);
                 const img = document.createElement('img');
                 img.src = imgUrl;
                 img.style.cssText = 'width: 100%; border-radius: 8px; cursor: pointer;';
-                img.title = 'Click to set as avatar';
-                img.onclick = () => selectAvatar(partnerId, path);
+                img.title = 'Click to view';
+                img.onclick = () => openLightbox(lightboxImgs, i);
                 img.onerror = () => img.style.display = 'none';
                 div.appendChild(img);
             });
@@ -7939,9 +7943,16 @@
                 typing.classList.remove('show');
 
                 if (res.ok) {
-                    addMessage(data.content, false, data.speaker_name, data.avatar, data.avatar_image);
-                    // Trigger auto-generate if enabled
-                    triggerAutoGenerate(partnerId);
+                    // Check if user navigated away while waiting
+                    if (currentRoomId !== requestRoomId) {
+                        // User navigated away - mark that room as unread
+                        markRoomUnread(requestRoomId);
+                    } else {
+                        // Still in the same room, show the response
+                        addMessage(data.content, false, data.speaker_name, data.avatar, data.avatar_image);
+                        // Trigger auto-generate if enabled
+                        triggerAutoGenerate(partnerId);
+                    }
 
                     // Chain mode: check for mentioned partners
                     if (chainModeEnabled && !chainStopRequested) {
@@ -8625,8 +8636,8 @@
             const img = document.createElement('img');
             img.src = imgUrl;
             img.style.cssText = 'width: 100%; display: block; cursor: pointer;';
-            img.title = 'Click to set as avatar';
-            img.onclick = () => selectAvatar(partnerId, imagePath);
+            img.title = 'Click to view';
+            img.onclick = () => openLightbox([{path: imagePath, type: 'selfie', partner_id: partnerId, prompt: description}], 0);
             img.onerror = () => container.innerHTML = 'Image failed to load';
             container.appendChild(img);
 
@@ -8647,8 +8658,18 @@
             const container = document.createElement('div');
             container.style.cssText = 'margin-bottom: 16px;';
 
+            // Build flat array of all images for lightbox navigation
+            const allImages = [];
+            results.forEach(result => {
+                result.images.forEach(imagePath => {
+                    allImages.push({path: imagePath, type: 'selfie', partner_id: result.partnerId, prompt: result.description});
+                });
+            });
+
+            let imageIndex = 0;
             results.forEach((result, idx) => {
                 result.images.forEach((imagePath, imgIdx) => {
+                    const currentIndex = imageIndex++;
                     const card = document.createElement('div');
                     card.style.cssText = 'background: #161b22; border: 1px solid #30363d; border-radius: 12px; overflow: hidden; margin-bottom: 12px; max-width: 520px;';
 
@@ -8657,8 +8678,8 @@
                     const img = document.createElement('img');
                     img.src = imgUrl;
                     img.style.cssText = 'width: 100%; display: block; cursor: pointer;';
-                    img.title = 'Click to set as avatar';
-                    img.onclick = () => selectAvatar(result.partnerId, imagePath);
+                    img.title = 'Click to view';
+                    img.onclick = () => openLightbox(allImages, currentIndex);
                     img.onerror = () => card.style.display = 'none';
                     card.appendChild(img);
 
@@ -9459,6 +9480,7 @@
 
                 // Load connection settings
                 $('settingsOllamaUrl').value = data.ollama_base_url || '';
+                $('settingsDefaultOllamaModel').value = data.default_ollama_model || 'deepseek-r1:7b';
                 $('settingsComfyUrl').value = data.comfy_url || '';
                 $('settingsProxyUrl').value = data.proxy_url || '';
 
@@ -10453,6 +10475,7 @@
                         storybuilder_model: $('settingsDMModel').value,
                         // Connection settings
                         ollama_base_url: $('settingsOllamaUrl').value.trim() || 'http://localhost:11434',
+                        default_ollama_model: $('settingsDefaultOllamaModel').value.trim() || 'deepseek-r1:7b',
                         comfy_url: $('settingsComfyUrl').value.trim() || 'http://localhost:8188',
                         proxy_url: $('settingsProxyUrl').value.trim(),
                         // Custom checkpoint
@@ -11604,7 +11627,8 @@
                     html += `<em>${escapeHtml(data.description || '')}</em>`;
                     if (data.image) {
                         const imgUrl = pathToUrl(data.image);
-                        html += `<br><br><img src="${imgUrl}" style="max-width: 100%; border-radius: 8px; cursor: pointer;" onclick="window.open('${imgUrl}', '_blank')">`;
+                        const escapedPath = data.image.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+                        html += `<br><br><img src="${imgUrl}" style="max-width: 100%; border-radius: 8px; cursor: pointer;" onclick="openLightbox([{path: '${escapedPath}', type: 'group'}], 0)">`;
                     } else if (data.comfy_offline) {
                         html += `<br><br><em style="color: #f0883e;">(ComfyUI offline - no image generated)</em>`;
                     } else if (data.error) {

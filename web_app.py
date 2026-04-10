@@ -370,6 +370,8 @@ def load_persisted_settings():
                 settings.elevenlabs_api_key = data['elevenlabs_api_key']
             if 'ollama_base_url' in data:
                 settings.ollama_base_url = data['ollama_base_url']
+            if 'default_ollama_model' in data:
+                settings.default_ollama_model = data['default_ollama_model']
             if 'comfy_url' in data:
                 settings.comfy_url = data['comfy_url']
             if 'proxy_url' in data:
@@ -390,7 +392,7 @@ provider_manager = ProviderManager(settings)
 # Initialize memory system
 from memory import MemoryStore, MemoryConsolidator
 memory_store = MemoryStore(settings.data_dir)
-memory_consolidator = MemoryConsolidator(memory_store, settings.ollama_base_url)
+memory_consolidator = MemoryConsolidator(memory_store, settings.ollama_base_url, settings.default_ollama_model)
 
 # Track active consolidations for status indicator
 _consolidation_status = {}  # room_id -> {partner_id: "running"|"done"}
@@ -1736,7 +1738,7 @@ def create_partner():
         gender=data.get('gender', ''),
         color=data.get('color', '#ff69b4'),
         provider=data.get('provider', 'ollama'),
-        model=data.get('model', 'llama3.2'),
+        model=data.get('model', settings.default_ollama_model),
         avatar=data.get('avatar', '🤖'),
         custom_system_prompt=data.get('custom_system_prompt'),
         memory_mode=data.get('memory_mode', 'local'),
@@ -2496,6 +2498,7 @@ def get_settings():
         'hires_denoise': getattr(generator, 'hires_denoise', 0.4) if generator else persisted.get('hires_denoise', 0.4),
         # Connection settings
         'ollama_base_url': settings.ollama_base_url,
+        'default_ollama_model': settings.default_ollama_model,
         'comfy_url': settings.comfy_url,
         'proxy_url': settings.proxy_url,
         # Custom checkpoint
@@ -2557,6 +2560,8 @@ def update_settings():
             settings.elevenlabs_api_key = data['elevenlabs_api_key']
         if 'ollama_base_url' in data and data['ollama_base_url']:
             settings.ollama_base_url = data['ollama_base_url'].rstrip('/')
+        if 'default_ollama_model' in data and data['default_ollama_model']:
+            settings.default_ollama_model = data['default_ollama_model']
         if 'comfy_url' in data and data['comfy_url']:
             settings.comfy_url = data['comfy_url'].rstrip('/')
         if 'proxy_url' in data:
@@ -2619,6 +2624,7 @@ def update_settings():
             'hires_denoise': float(data.get('hires_denoise', 0.4)),
             # Connection settings
             'ollama_base_url': settings.ollama_base_url,
+            'default_ollama_model': settings.default_ollama_model,
             'comfy_url': settings.comfy_url,
             'proxy_url': settings.proxy_url,
             'custom_checkpoint': settings.custom_checkpoint,
@@ -3103,8 +3109,10 @@ def toggle_image_favorite():
 def get_room_favorites():
     """Get favorited images for a specific room's collage background."""
     from pathlib import Path
+    import random
 
     room_id = request.args.get('room_id', 'common')
+    limit = int(request.args.get('limit', 100))  # Default limit of 100
     favorites = _load_favorites(room_id)
     images = []
 
@@ -3112,6 +3120,10 @@ def get_room_favorites():
         # Verify file still exists
         if Path(path).exists():
             images.append({'path': path})
+
+    # If we have more than the limit, randomly sample
+    if len(images) > limit:
+        images = random.sample(images, limit)
 
     return jsonify(images)
 

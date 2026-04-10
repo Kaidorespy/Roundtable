@@ -145,7 +145,7 @@ If no inventory actions, respond: {{"has_inventory_action": false, "actions": []
 """
 
         try:
-            response = await ollama_generate_func(prompt, model="llama3.2")
+            response = await ollama_generate_func(prompt, )
             # Parse the JSON response
             result = json.loads(response)
             return result
@@ -317,7 +317,7 @@ Give the GM tools, not a script.
 """
 
         try:
-            advice = await ollama_generate_func(prompt, model="llama3.2")
+            advice = await ollama_generate_func(prompt, )
 
             # Log the consultation
             self.consultation_history.append({
@@ -353,7 +353,7 @@ This is craft advice for a game master, not a book report.
 """
 
         try:
-            return await ollama_generate_func(prompt, model="llama3.2")
+            return await ollama_generate_func(prompt, )
         except Exception as e:
             return f"Analysis failed: {e}"
 
@@ -370,7 +370,7 @@ Focus on works that offer LEARNABLE TECHNIQUES, not just good examples.
 """
 
         try:
-            return await ollama_generate_func(prompt, model="llama3.2")
+            return await ollama_generate_func(prompt, )
         except Exception as e:
             return f"Suggestion failed: {e}"
 

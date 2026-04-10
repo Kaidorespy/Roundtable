@@ -94,10 +94,10 @@ class MemoryConsolidator:
     # How many turns between automatic consolidations
     CONSOLIDATION_INTERVAL = 15
 
-    def __init__(self, memory_store: MemoryStore, ollama_base_url: str = "http://localhost:11434"):
+    def __init__(self, memory_store: MemoryStore, ollama_base_url: str = "http://localhost:11434", model: str = "deepseek-r1:7b"):
         self.store = memory_store
         self.ollama_url = ollama_base_url
-        self.model = "qwen2.5:14b"  # Qwen for all memory work
+        self.model = model  # Configurable via settings.default_ollama_model
 
     async def _call_ollama(self, system: str, prompt: str) -> str:
         """Call Ollama API."""
