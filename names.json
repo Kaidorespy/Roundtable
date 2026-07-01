@@ -1,0 +1,68 @@
+{
+  "masculine": [
+    "Marcus", "Silas", "Ezra", "Malik", "Rowan", "Dante", "Cole", "Kai", "Theo", "Jasper",
+    "Adrian", "Rafael", "Damon", "Cassian", "Felix", "Nolan", "Beckett", "Milo", "Zane", "Asher",
+    "Victor", "Dominic", "Javier", "Santiago", "Diego", "Mateo", "Luca", "Nico", "Hugo", "Oscar",
+    "Elijah", "Isaiah", "Jeremiah", "Micah", "Tobias", "Xavier", "Sterling", "Griffin", "Nash", "Hayes",
+    "Wyatt", "Sawyer", "Colton", "Easton", "Ryder", "Maverick", "Colt", "Kane", "Axel", "Knox",
+    "Cyrus", "Orion", "Atlas", "Phoenix", "Cairo", "Bodhi", "Rio", "Cruz", "Enzo", "Matteo",
+    "Jin", "Kenji", "Hiro", "Ryu", "Yuki", "Akira", "Takeshi", "Kenzo", "Daichi", "Ren",
+    "Wei", "Chen", "Ming", "Kai", "Li", "Jun", "Shen", "Tao", "Feng", "Bo",
+    "Andrei", "Dimitri", "Ivan", "Nikolai", "Pavel", "Sergei", "Viktor", "Alexei", "Boris", "Yuri",
+    "Kwame", "Kofi", "Amari", "Jabari", "Zaire", "Omari", "Kian", "Tariq", "Rashid", "Idris",
+    "Soren", "Erik", "Lars", "Magnus", "Bjorn", "Leif", "Gunnar", "Odin", "Thor", "Ragnar",
+    "Vincent", "Gerard", "Antoine", "Laurent", "Julien", "Pascal", "Remy", "Claude", "Marcel", "Henri",
+    "Conrad", "Werner", "Klaus", "Hans", "Otto", "Fritz", "Kurt", "Bruno", "Axel", "Max",
+    "Esteban", "Alejandro", "Carlos", "Miguel", "Fernando", "Ricardo", "Andres", "Pablo", "Ramon", "Luis"
+  ],
+  "feminine": [
+    "Lumen", "Aurora", "Sage", "Ivy", "Luna", "Ember", "Raven", "Willow", "Juniper", "Hazel",
+    "Vera", "Iris", "Clara", "Nadia", "Mira", "Elena", "Sasha", "Talia", "Zara", "Leila",
+    "Maya", "Ava", "Isla", "Cora", "Freya", "Stella", "Aria", "Nova", "Lyra", "Quinn",
+    "Carmen", "Sofia", "Valentina", "Camila", "Lucia", "Isabella", "Gabriela", "Mariana", "Elena", "Rosa",
+    "Marisol", "Paloma", "Esperanza", "Luz", "Solana", "Celeste", "Alba", "Marina", "Renata", "Pilar",
+    "Anya", "Katya", "Sonja", "Yelena", "Irina", "Natasha", "Mila", "Zoya", "Daria", "Vera",
+    "Yuki", "Sakura", "Hana", "Mei", "Rin", "Aiko", "Miku", "Yumi", "Sora", "Kira",
+    "Lin", "Mei", "Xia", "Hua", "Lan", "Zhen", "Ying", "Fang", "Li", "Wei",
+    "Amara", "Nia", "Kaya", "Zola", "Imani", "Aaliyah", "Asha", "Zuri", "Ife", "Ada",
+    "Ingrid", "Astrid", "Sigrid", "Freya", "Liv", "Eira", "Saga", "Thora", "Gudrun", "Solveig",
+    "Colette", "Margot", "Odette", "Camille", "Yvette", "Simone", "Eloise", "Genevieve", "Delphine", "Adele",
+    "Greta", "Liesel", "Heidi", "Marta", "Anke", "Petra", "Katrin", "Ulla", "Frieda", "Ilse",
+    "Sienna", "Scarlett", "Ruby", "Jade", "Opal", "Pearl", "Coral", "Amber", "Ivory", "Ebony",
+    "Wren", "Dove", "Lark", "Sparrow", "Finch", "Robin", "Phoenix", "Raven", "Crow", "Starling"
+  ],
+  "neutral": [
+    "Avery", "Riley", "Morgan", "Jordan", "Casey", "Alex", "Sam", "Jamie", "Drew", "Taylor",
+    "Quinn", "Reese", "Sage", "River", "Sky", "Storm", "Ash", "Rowan", "Eden", "Phoenix",
+    "Finley", "Emery", "Parker", "Hayden", "Blake", "Charlie", "Frankie", "Jessie", "Kendall", "Dakota",
+    "Remy", "Ellis", "Harley", "Kai", "Lake", "Ocean", "Rain", "Winter", "August", "Indigo",
+    "Marlowe", "Shiloh", "Sutton", "Tatum", "Sloane", "Lennox", "Remington", "Bellamy", "Reign", "Arrow",
+    "Wren", "Sparrow", "Onyx", "Mica", "Slate", "Flint", "Cedar", "Birch", "Aspen", "Bay"
+  ],
+  "surnames": [
+    "Chen", "Kim", "Singh", "Patel", "Garcia", "Rodriguez", "Martinez", "Lopez", "Gonzalez", "Hernandez",
+    "Nguyen", "Tran", "Lee", "Wang", "Zhang", "Liu", "Yang", "Huang", "Wu", "Zhou",
+    "Smith", "Johnson", "Williams", "Brown", "Jones", "Davis", "Wilson", "Anderson", "Taylor", "Thomas",
+    "Moore", "Jackson", "Martin", "Thompson", "White", "Harris", "Clark", "Lewis", "Walker", "Hall",
+    "Reyes", "Cruz", "Morales", "Ortiz", "Gutierrez", "Chavez", "Ramos", "Castillo", "Flores", "Rivera",
+    "Volkov", "Petrov", "Ivanov", "Sokolov", "Kuznetsov", "Popov", "Smirnov", "Mikhailov", "Fedorov", "Kozlov",
+    "Muller", "Schmidt", "Schneider", "Fischer", "Weber", "Meyer", "Wagner", "Becker", "Schulz", "Hoffmann",
+    "Bernard", "Dubois", "Moreau", "Laurent", "Simon", "Michel", "Lefevre", "Roux", "Vincent", "Fontaine",
+    "Rossi", "Russo", "Ferrari", "Esposito", "Bianchi", "Romano", "Colombo", "Ricci", "Marino", "Costa",
+    "Nakamura", "Tanaka", "Yamamoto", "Watanabe", "Ito", "Sato", "Suzuki", "Takahashi", "Kobayashi", "Kato",
+    "Okonkwo", "Mwangi", "Osei", "Mensah", "Diallo", "Traore", "Kone", "Coulibaly", "Ndiaye", "Sow",
+    "Blackwood", "Sterling", "Ashford", "Vance", "Cross", "Stone", "Wolf", "Fox", "Hawk", "Drake",
+    "Delacroix", "Montoya", "Santiago", "Valencia", "Cordova", "Salazar", "Vega", "Luna", "Solis", "Ochoa"
+  ],
+  "nicknames": [
+    "Doc", "Scout", "Ghost", "Reaper", "Bishop", "Hawk", "Wolf", "Fox", "Bear", "Snake",
+    "Patch", "Stitch", "Spark", "Flash", "Blade", "Razor", "Fixer", "Wrench", "Gears", "Torch",
+    "Cricket", "Beetle", "Spider", "Moth", "Cicada", "Mantis", "Ant", "Wasp", "Hornet", "Locust",
+    "Shadow", "Shade", "Dusk", "Dawn", "Echo", "Whisper", "Silence", "Hush", "Murmur", "Static",
+    "Rust", "Iron", "Steel", "Copper", "Brass", "Chrome", "Nickel", "Cobalt", "Mercury", "Zinc",
+    "Ash", "Ember", "Cinder", "Smoke", "Blaze", "Flare", "Spark", "Coal", "Soot", "Char",
+    "Ridge", "Canyon", "Mesa", "Valley", "Creek", "Brook", "Marsh", "Bog", "Mire", "Glen",
+    "Zero", "Nine", "Seven", "Ace", "Deuce", "Dice", "Lucky", "Chance", "Trick", "Jinx",
+    "Red", "Blue", "Gray", "Slate", "Ivory", "Jet", "Onyx", "Russet", "Tawny", "Dun"
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "name": "fantasy",
+  "system_prompt": "fantasy art, medieval setting, detailed illustration, dramatic lighting",
+  "negative": "blurry, low quality, text, watermark, signature, modern elements",
+  "width": 1024,
+  "height": 1024,
+  "steps": 25,
+  "cfg": 7.5,
+  "checkpoint": null,
+  "created": "2026-03-25T01:45:20.762388"
+}

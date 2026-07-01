@@ -1,0 +1,11 @@
+{
+  "name": "dark-fantasy",
+  "system_prompt": "dark fantasy art, gothic, ominous atmosphere, detailed illustration",
+  "negative": "blurry, low quality, text, watermark, bright colors, cheerful",
+  "width": 1024,
+  "height": 1024,
+  "steps": 25,
+  "cfg": 8.0,
+  "checkpoint": null,
+  "created": "2026-03-25T01:45:20.762799"
+}
