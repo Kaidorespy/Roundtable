@@ -5827,6 +5827,9 @@
             const normalizedModel = (model || '').toLowerCase();
 
             if (provider === 'anthropic') {
+                if (normalizedModel === 'claude-fable-5' || normalizedModel === 'claude-mythos-5') {
+                    return false;
+                }
                 const match = normalizedModel.match(/^claude-opus-4-(\d+)/);
                 return !match || Number.parseInt(match[1], 10) < 7;
             }

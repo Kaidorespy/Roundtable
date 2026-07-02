@@ -19,8 +19,12 @@ def _normalize_temperature(value: float | int | str | None) -> float:
 
 
 def _anthropic_model_supports_temperature(model: str) -> bool:
-    """Claude Opus 4.7+ rejects sampling parameters; omit them entirely."""
-    parts = (model or "").lower().split("-")
+    """Newer Claude models reject sampling parameters; omit them entirely."""
+    normalized = (model or "").lower()
+    if normalized in {"claude-fable-5", "claude-mythos-5"}:
+        return False
+
+    parts = normalized.split("-")
     if len(parts) < 4 or parts[:3] != ["claude", "opus", "4"]:
         return True
 
@@ -76,6 +80,8 @@ class AnthropicProvider(BaseProvider):
     def __init__(self, api_key: str):
         self.api_key = api_key
         self._models = [
+            # Claude 5 family
+            "claude-fable-5",
             # Claude 4.x family
             "claude-opus-4-8",
             "claude-opus-4-7",
