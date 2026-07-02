@@ -141,10 +141,34 @@ Requires ComfyUI backend:
 ```bash
 cd RoundtableV2
 pip install -r requirements.txt
+python launcher.py
+```
+
+Roundtable opens in your browser at:
+
+```text
+http://127.0.0.1:5055
+```
+
+Keep the terminal window open while using Roundtable. Closing it stops the server.
+
+You can also run:
+
+```bash
 python main.py
 ```
 
-Open http://localhost:5000
+`main.py` delegates to the same launcher.
+
+### Packaged Windows Build
+
+If you have the packaged build, run:
+
+```text
+dist_slim\Roundtable.exe
+```
+
+It starts the same local server and opens `http://127.0.0.1:5055`.
 
 ### Optional: Image Generation
 Install ComfyUI separately, configure URL in settings.
