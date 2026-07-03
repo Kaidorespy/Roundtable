@@ -1,3 +1,6 @@
+<img width="1536" height="1024" alt="ChatGPT Image Apr 1, 2026, 01_47_04 PM" src="https://github.com/user-attachments/assets/f7083a37-f2b4-400d-9731-d6abb409f340" />
+
+
 # Roundtable
 
 **Collaborative storytelling with AI companions who remember, react, and feel real.**
